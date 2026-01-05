@@ -1,6 +1,5 @@
-# File: app/api/v1/auth.py
 import logging
-from fastapi import APIRouter, HTTPException, status, Response, Request, Depends
+from fastapi import APIRouter, HTTPException, status, Response, Request
 from fastapi.responses import JSONResponse
 from app.schemas.auth import UserSignup, UserLogin
 from app.db.supabase import supabase
@@ -10,22 +9,31 @@ logger = get_logger("TAP.Auth")
 
 router = APIRouter()
 
-# --- 1. SIGNUP ---
+# --- 1. SIGNUP (FIXED) ---
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user: UserSignup):
     logger.info(f"SIGNUP REQUEST: Received for email: {user.email}")
     
     try:
-        # Pass role, first_name, and last_name to Supabase Metadata
+        # 1. Construct the Metadata Dictionary
+        # This data is what allows you to customize the dashboard later
+        user_metadata = {
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "role": user.role,
+        }
+
+        # 2. Add 'Year' only if it exists (Students have it, Teachers might not)
+        if user.year:
+            user_metadata["year"] = user.year  # e.g., "BE"
+
+        # 3. Send to Supabase
         response = supabase.auth.sign_up({
             "email": user.email,
             "password": user.password,
             "options": {
-                "data": {
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role  # Crucial: Save role to metadata
-                }
+                # The 'data' field is where custom attributes live
+                "data": user_metadata
             }
         })
 
@@ -36,11 +44,11 @@ async def signup(user: UserSignup):
 
     except Exception as e:
         logger.error(f"CRITICAL SIGNUP ERROR: {str(e)}", exc_info=True)
-        if "User already registered" in str(e):
+        # Handle specific Supabase error messages
+        if "User already registered" in str(e) or "already exists" in str(e):
              raise HTTPException(status_code=400, detail="This email is already registered.")
         raise HTTPException(status_code=400, detail=f"Signup failed: {str(e)}")
-
-# --- 2. LOGIN (THIS WAS MISSING) ---
+# --- 2. LOGIN ---
 @router.post("/login")
 async def login(user: UserLogin, response: Response):
     try:
@@ -71,6 +79,7 @@ async def login(user: UserLogin, response: Response):
             )
 
         # 4. If roles match, proceed!
+        # Return all metadata so the frontend can display Name and Year immediately
         return {
             "access_token": session.session.access_token,
             "token_type": "bearer",
@@ -79,7 +88,8 @@ async def login(user: UserLogin, response: Response):
                 "email": session.user.email,
                 "role": actual_role,
                 "first_name": session.user.user_metadata.get("first_name", ""),
-                "last_name": session.user.user_metadata.get("last_name", "")
+                "last_name": session.user.user_metadata.get("last_name", ""),
+                "year": session.user.user_metadata.get("year", "")  # Send Year to frontend
             }
         }
         
@@ -94,23 +104,17 @@ async def login(user: UserLogin, response: Response):
 async def logout(response: Response, request: Request):
     try:
         # 1. Tell Supabase to revoke the session
-        # We need the user's access token to sign them out securely
         access_token = request.cookies.get("access_token")
         
-        # If you aren't using cookies and sending Authorization header instead:
-        # access_token = request.headers.get("Authorization").split("Bearer ")[1]
-
         if access_token:
-            # This invalidates the refresh token on Supabase's side
             supabase.auth.sign_out()
         
-        # 2. Clear the cookies (Crucial if you use HTTP-only cookies)
+        # 2. Clear the cookies
         response.delete_cookie(key="access_token")
         response.delete_cookie(key="refresh_token")
         
         return {"message": "Logged out successfully"}
 
     except Exception as e:
-        # Even if Supabase errors, we should still clear local cookies
         response.delete_cookie(key="access_token")
         return JSONResponse(status_code=500, content={"detail": str(e)})
