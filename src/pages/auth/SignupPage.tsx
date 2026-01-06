@@ -15,11 +15,12 @@ export default function SignupPage() {
         last_name: "",
         email: "",
         password: "",
+        year: "",
     })
     const [error, setError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
@@ -42,6 +43,7 @@ export default function SignupPage() {
                 email: formData.email,
                 password: formData.password,
                 role: role,
+                year: role === "student" ? formData.year : undefined,
             }
             console.log("🚀 SENDING SIGNUP PAYLOAD:", payload)
 
@@ -155,6 +157,24 @@ export default function SignupPage() {
                                     required
                                 />
                             </div>
+                            {role === "student" && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-foreground">Year</label>
+                                    <select
+                                        name="year"
+                                        className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-black/20"
+                                        value={formData.year}
+                                        onChange={handleChange}
+                                        required
+                                    >
+                                        <option value="" disabled>Select Year</option>
+                                        <option value="FE">First Year (FE)</option>
+                                        <option value="SE">Second Year (SE)</option>
+                                        <option value="TE">Third Year (TE)</option>
+                                        <option value="BE">Fourth Year (BE)</option>
+                                    </select>
+                                </div>
+                            )}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">Password</label>
                                 <Input

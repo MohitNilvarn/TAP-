@@ -3,27 +3,34 @@ import { FileText, BookOpen, Layers } from "lucide-react"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
-// We removed 'api' import to stop the 404 error
+import FEDashboard from "../../components/dashboard/years/FEDashboard"
+import SEDashboard from "../../components/dashboard/years/SEDashboard"
+import TEDashboard from "../../components/dashboard/years/TEDashboard"
+import BEDashboard from "../../components/dashboard/years/BEDashboard"
 
 export default function DashboardHome() {
     const [userName, setUserName] = useState("User")
+    const [userYear, setUserYear] = useState("")
     const role = localStorage.getItem("role")
 
     useEffect(() => {
-        // FIX: Read directly from LocalStorage instead of calling the broken API
         const storedUser = localStorage.getItem("user")
 
         if (storedUser) {
             try {
                 const parsedUser = JSON.parse(storedUser)
 
-                // We check both direct properties and metadata to be safe
                 const firstName = parsedUser.first_name ||
                     parsedUser.user_metadata?.first_name ||
                     "User"
 
                 if (firstName && firstName !== "User") {
                     setUserName(firstName)
+                }
+
+                const year = parsedUser.year || parsedUser.user_metadata?.year || ""
+                if (year) {
+                    setUserYear(year)
                 }
             } catch (e) {
                 console.error("Error parsing user data:", e)
@@ -44,50 +51,59 @@ export default function DashboardHome() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Notes</CardTitle>
-                            <div className="p-2 rounded-full bg-blue-50 group-hover:bg-blue-100 transition-colors">
-                                <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-foreground">12</div>
-                            <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+2 from last week</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Assignments</CardTitle>
-                            <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
-                                <BookOpen className="h-5 w-5 text-purple-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-foreground">5</div>
-                            <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+1 from yesterday</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Flashcard Decks</CardTitle>
-                            <div className="p-2 rounded-full bg-green-50 group-hover:bg-green-100 transition-colors">
-                                <Layers className="h-5 w-5 text-green-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-foreground">8</div>
-                            <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+3 new decks</p>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            </div>
+            {/* Year Specific Dashboards for Students */}
+            {isStudent && userYear === "FE" && <FEDashboard />}
+            {isStudent && userYear === "SE" && <SEDashboard />}
+            {isStudent && userYear === "TE" && <TEDashboard />}
+            {isStudent && userYear === "BE" && <BEDashboard />}
+
+            {/* Default Dashboard Content (shown if no specific year dashboard or for teachers) */}
+            {(!isStudent || !["FE", "SE", "TE", "BE"].includes(userYear)) && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                        <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Notes</CardTitle>
+                                <div className="p-2 rounded-full bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                                    <FileText className="h-5 w-5 text-blue-600" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-foreground">12</div>
+                                <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+2 from last week</p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                        <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Assignments</CardTitle>
+                                <div className="p-2 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-colors">
+                                    <BookOpen className="h-5 w-5 text-purple-600" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-foreground">5</div>
+                                <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+1 from yesterday</p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                        <Card className="group hover:shadow-2xl transition-all duration-300 cursor-pointer border-black/5 bg-white shadow-sm hover:-translate-y-1">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Flashcard Decks</CardTitle>
+                                <div className="p-2 rounded-full bg-green-50 group-hover:bg-green-100 transition-colors">
+                                    <Layers className="h-5 w-5 text-green-600" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-foreground">8</div>
+                                <p className="text-xs text-muted-foreground mt-1 font-medium text-green-600">+3 new decks</p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
+            )}
 
             <div>
                 <h2 className="text-2xl font-bold text-foreground mb-6">Quick Actions</h2>
