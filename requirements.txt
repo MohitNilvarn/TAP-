@@ -1,0 +1,71 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+
+# Database & ORM
+sqlalchemy
+alembic
+psycopg2-binary
+supabase
+postgrest
+motor
+beanie
+pymongo
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+
+# LangChain Ecosystem (Open Source)
+langchain
+langchain-community
+langchain-groq
+langgraph
+
+# Vector Stores
+chromadb
+sentence-transformers
+
+# Document Processing
+pypdf
+python-docx
+python-pptx
+openpyxl
+markdown
+
+# Audio Processing (Open Source)
+faster-whisper
+pydub
+ffmpeg-python
+librosa
+
+# Text Processing & Embeddings
+tiktoken
+huggingface-hub
+transformers
+
+# Async & Background Tasks
+celery
+redis
+flower
+
+# API Clients
+groq
+httpx
+
+# Monitoring & Logging
+loguru
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Utils
+python-magic
+aiofiles
+tenacity
