@@ -30,48 +30,59 @@ async def create_course(
     """
     Create a new course. Teachers only.
     """
-    logger.info(f"Creating course: {course_data.name} by teacher {current_user['id']}")
-    
-    # Check if course code already exists for this teacher
-    existing = await Course.find_one(
-        Course.teacher_id == current_user["id"],
-        Course.code == course_data.code
-    )
-    
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Course with code {course_data.code} already exists"
+    try:
+        logger.info(f"Creating course: {course_data.name} by teacher {current_user['id']}")
+        
+        # Check if course code already exists for this teacher
+        existing = await Course.find_one(
+            Course.teacher_id == current_user["id"],
+            Course.code == course_data.code
         )
-    
-    # Create course
-    course = Course(
-        teacher_id=current_user["id"],
-        name=course_data.name,
-        code=course_data.code,
-        description=course_data.description,
-        semester=course_data.semester,
-        year=course_data.year,
-        syllabus_content=course_data.syllabus_content
-    )
-    
-    await course.insert()
-    
-    logger.info(f"Course created: {course.id}")
-    
-    return CourseResponse(
-        id=str(course.id),
-        teacher_id=course.teacher_id,
-        name=course.name,
-        code=course.code,
-        description=course.description,
-        semester=course.semester,
-        year=course.year,
-        syllabus_content=course.syllabus_content,
-        enrolled_students=course.enrolled_students,
-        created_at=course.created_at,
-        updated_at=course.updated_at
-    )
+        
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Course with code {course_data.code} already exists"
+            )
+        
+        # Create course
+        course = Course(
+            teacher_id=current_user["id"],
+            name=course_data.name,
+            code=course_data.code,
+            description=course_data.description,
+            semester=course_data.semester,
+            year=course_data.year,
+            syllabus_content=course_data.syllabus_content
+        )
+        
+        await course.insert()
+        
+        logger.info(f"Course created: {course.id}")
+        
+        return CourseResponse(
+            id=str(course.id),
+            teacher_id=course.teacher_id,
+            name=course.name,
+            code=course.code,
+            description=course.description,
+            semester=course.semester,
+            year=course.year,
+            syllabus_content=course.syllabus_content,
+            enrolled_students=course.enrolled_students,
+            created_at=course.created_at,
+            updated_at=course.updated_at
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error creating course: {str(e)}\n{error_details}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating course: {str(e)}"
+        )
 
 
 @router.get("", response_model=CourseListResponse)

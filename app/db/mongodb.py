@@ -2,6 +2,12 @@
 """
 MongoDB Atlas connection manager using Motor (async driver) and Beanie ODM.
 """
+import dns.resolver
+
+# Configure DNS resolver to use Google DNS (bypasses local DNS issues)
+dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+dns.resolver.default_resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.core.config import settings

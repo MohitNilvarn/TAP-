@@ -118,7 +118,15 @@ async def generate_json(
         
         return parser.parse(content.strip())
     except Exception as e:
-        logger.error(f"LLM JSON generation error: {str(e)}")
+        error_msg = str(e)
+        # Try to extract more details if available
+        if hasattr(e, 'response') and hasattr(e.response, 'text'):
+            error_msg = f"{error_msg} - Response: {e.response.text}"
+        elif hasattr(e, 'body'):
+            error_msg = f"{error_msg} - Body: {e.body}"
+        elif hasattr(e, 'message'):
+            error_msg = f"{error_msg} - Message: {e.message}"
+        logger.error(f"LLM JSON generation error: {error_msg}")
         raise
 
 

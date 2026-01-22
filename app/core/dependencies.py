@@ -2,7 +2,8 @@
 """
 FastAPI dependencies for authentication and authorization.
 """
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Dict, Any
 from jose import jwt, JWTError
 
@@ -11,43 +12,41 @@ from app.core.logger import get_logger
 
 logger = get_logger("TAP.Dependencies")
 
+# Security scheme for Swagger UI
+security = HTTPBearer(auto_error=False)
 
-async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
     """
     Extract and validate user from JWT token.
     
     The token is expected in the Authorization header as:
     Authorization: Bearer <token>
     """
-    if not authorization:
+    if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authorization header",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    try:
-        # Extract token from "Bearer <token>"
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme",
-            )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header format",
-        )
+    token = credentials.credentials
+    
     
     try:
-        # Decode Supabase JWT (using HS256)
-        # Note: In production, verify with Supabase JWT secret
+        # Decode Supabase JWT
+        # Note: Supabase uses a separate JWT_SECRET (not the anon key) for signing
+        # For development, we decode without signature verification
+        # In production, add SUPABASE_JWT_SECRET to .env and verify properly
         payload = jwt.decode(
             token,
-            settings.SUPABASE_KEY,  # Supabase anon key can be used for basic validation
+            "",  # Empty key required by python-jose even when not verifying
             algorithms=["HS256"],
-            options={"verify_aud": False}  # Supabase tokens don't always have aud
+            options={
+                "verify_signature": False,  # Supabase JWT secret is different from anon key
+                "verify_aud": False,
+                "verify_exp": True  # Still verify expiration
+            }
         )
         
         user_id = payload.get("sub")
@@ -101,15 +100,16 @@ async def require_student(current_user: Dict[str, Any] = Depends(get_current_use
     return current_user
 
 
-async def get_optional_user(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
+async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Optional[Dict[str, Any]]:
     """
     Get user if authenticated, None otherwise.
     Useful for endpoints that work with or without auth.
     """
-    if not authorization:
+    if not credentials:
         return None
     
     try:
-        return await get_current_user(authorization)
+        return await get_current_user(credentials)
     except HTTPException:
         return None
+

@@ -158,7 +158,7 @@ def get_assignment_prompt(transcript: str, context: str, lecture_title: str) -> 
 def get_flashcards_prompt(transcript: str, context: str, lecture_title: str) -> str:
     """Format the flashcards generation prompt."""
     return FLASHCARDS_PROMPT.format(
-        transcript=transcript[:8000],
-        context=context[:4000],
+        transcript=transcript[:6000],  # Reduced limit to avoid token overflow
+        context=context[:2000],  # Reduced limit
         lecture_title=lecture_title
     )
