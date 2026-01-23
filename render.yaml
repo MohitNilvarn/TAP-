@@ -1,0 +1,39 @@
+# Render Blueprint Specification
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: tap-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      # Supabase Authentication
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      # MongoDB Atlas
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: TAP
+      # Groq API (LLM)
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      # HuggingFace (Embeddings)
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      # Storage Settings (using ephemeral storage on Render)
+      - key: CHROMA_PERSIST_DIR
+        value: /tmp/chroma_db
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "50"
